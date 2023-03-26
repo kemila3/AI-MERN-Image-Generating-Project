@@ -8,7 +8,7 @@ const RenderCards = ({data,title}) => {
   }
 
   return (
-    <h2 className='mt-5 fonr-bold text-[#6449ff] text-xl uppercase'>
+    <h2 className='mt-5 font-bold text-[#6449ff] text-xl uppercase'>
       {title}
     </h2>
   )
@@ -20,7 +20,49 @@ const Home = () => {
     const [allPost,setAllPost] = useState(null);
 
     const [searchText,setSearchText] = useState('')
+
+    const [searchResults, setSearchResults] = useState(null);
+    const [searchTimeout, setSearchTimeout] = useState(null)
+
+    useEffect(() => {
+      const fetchPosts = async () => {
+        setLoading(true);
+
+        try {
+          const response = await fetch('http://localhost:8080/api/v1/post', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          if (response.ok){
+            const result =await response.json()
+
+            setAllPost(result.data.reverse())
+          }
+        } catch (error) {
+          alert(error)
+        }finally {
+          setLoading(false)
+        }
+      }
+      fetchPosts()
+    }, [])
     
+    const handleSearchChange = (e) => {
+      clearTimeout(searchTimeout)
+      setSearchText(e.target.value);
+
+
+      setSearchTimeout(
+      setTimeout(() => {
+        const searchResults = allPost.filter((item) => item.name.toLowerCase().includes(searchText.toLowerCase()) 
+        || item.prompt.toLowerCase().includes(searchText.toLowerCase()))
+
+        setSearchResults(searchResults)
+      },500)
+      )
+    }
 
   return (
     <section className='max-w-7xl mx-auto'>
@@ -30,7 +72,14 @@ const Home = () => {
       </div>
 
       <div className='mt-16'>
-        <FormField />
+        <FormField 
+        labelName='Search posts'
+        type='text'
+        name='text'
+        placeholder="Search posts"
+        value={searchText}
+        handleChange={handleSearchChange}
+        />
       </div>
 
       <div className='mt-10'>
@@ -49,12 +98,12 @@ const Home = () => {
             <div className='grid lg:grid-cols-4 sm:grid-cols-3 xs:grid-cols-2 grid-cols-1 gap-3'>
               {searchText ? (
                 <RenderCards
-                  data={[]}
+                  data={searchResults}
                   title='No search results found'
                 />
               ) : (
                 <RenderCards
-                  data ={[]}
+                  data ={allPost}
                   title='No posts found'
                 />
               )
